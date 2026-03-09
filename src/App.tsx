@@ -515,7 +515,11 @@ const InterpretationView = ({ userData, selectedCards, onNext }: { userData: Use
   useEffect(() => {
     const fetchInterpretation = async () => {
       try {
-        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
+        const apiKey = process.env.GEMINI_API_KEY || '';
+        if (!apiKey) {
+          throw new Error('API Key is missing');
+        }
+        const ai = new GoogleGenAI({ apiKey });
         const prompt = `
           你是一位精通宇宙奥秘的高级占卜师。
           求问者：${userData.name}，能量属性：${userData.gender}
@@ -544,16 +548,24 @@ const InterpretationView = ({ userData, selectedCards, onNext }: { userData: Use
         `;
 
         const response = await ai.models.generateContent({
-          model: "gemini-3-flash-preview",
-          contents: prompt,
+          model: "gemini-2.0-flash",
+          contents: [{ parts: [{ text: prompt }] }],
         });
 
+        let text = '';
+        try {
+          text = response.text || '宇宙的信号有些微弱，请稍后再试。';
+        } catch (e) {
+          console.error('Error getting text from response:', e);
+          text = '宇宙的信号有些微弱，请稍后再试。';
+        }
+
         // Clean up any stray markdown symbols
-        const cleanText = (response.text || 'Connection lost...').replace(/[*#\-_~`]/g, '');
+        const cleanText = text.replace(/[*#\-_~`]/g, '');
         setInterpretation(cleanText);
       } catch (error) {
-        console.error(error);
-        setInterpretation('Data corruption detected. Unable to retrieve cosmic insights.');
+        console.error('Tarot Interpretation Error:', error);
+        setInterpretation('命运的丝线暂时交织错乱。请检查您的连接或稍后重试。 (Error: ' + (error instanceof Error ? error.message : 'Unknown') + ')');
       } finally {
         setLoading(false);
       }
@@ -657,15 +669,27 @@ const FortuneQuote = () => {
   const revealQuote = async () => {
     setLoading(true);
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
+      const apiKey = process.env.GEMINI_API_KEY || '';
+      if (!apiKey) {
+        throw new Error('API Key is missing');
+      }
+      const ai = new GoogleGenAI({ apiKey });
       const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: "Generate a single, powerful, and mysterious tarot-style fortune quote (one sentence). Language: Chinese. No markdown.",
+        model: "gemini-2.0-flash",
+        contents: [{ parts: [{ text: "Generate a single, powerful, and mysterious tarot-style fortune quote (one sentence). Language: Chinese. No markdown." }] }],
       });
-      setQuote(response.text?.replace(/[*#\-_~`]/g, '') || '星辰在寂静中低语。');
+      
+      let text = '';
+      try {
+        text = response.text || '星辰在寂静中低语。';
+      } catch (e) {
+        text = '星辰在寂静中低语。';
+      }
+
+      setQuote(text.replace(/[*#\-_~`]/g, ''));
       setIsRevealed(true);
     } catch (error) {
-      console.error(error);
+      console.error('Fortune Quote Error:', error);
       setQuote('命运的丝线，始终握在你自己手中。');
       setIsRevealed(true);
     } finally {
