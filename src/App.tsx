@@ -517,26 +517,30 @@ const InterpretationView = ({ userData, selectedCards, onNext }: { userData: Use
       try {
         const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
         const prompt = `
-          You are an advanced cosmic intelligence analyzing tarot vessels.
-          Subject: ${userData.name}, ${userData.gender}
-          Inquiry: ${userData.question}
-          Selected Vessels (in order: Past, Present, Future):
-          ${selectedCards.map((item, i) => `${i+1}. ${item.card.name} (${item.isReversed ? 'Reversed' : 'Upright'}) - Core Meaning: ${item.card.meaning}`).join('\n')}
+          你是一位精通宇宙奥秘的高级占卜师。
+          求问者：${userData.name}，能量属性：${userData.gender}
+          求问事项：${userData.question}
+          所选牌阵（按过去、现在、未来的顺序）：
+          ${selectedCards.map((item, i) => `${i+1}. ${item.card.name} (${item.isReversed ? '逆位' : '正位'}) - 核心含义：${item.card.meaning}`).join('\n')}
 
-          Provide a deep, sophisticated interpretation. 
-          IMPORTANT: You MUST interpret each card based on its orientation (Upright or Reversed). 
-          Reversed cards often represent internal energy, delays, or the shadow side of the card's meaning.
+          请针对求问者的具体问题“${userData.question}”，提供深度且具有启发性的解读。
+          
+          要求：
+          1. 必须根据牌面的正逆位进行解读。逆位通常代表能量的阻塞、内在的转化或延迟。
+          2. 解读必须紧扣求问者的问题，给出实质性的建议。
+          
+          结构：
+          一、 牌阵解析（过去、现在、未来）
+             - 逐一解读每张牌，明确说明正逆位，并结合求问者的问题解释其深层含义。
+          二、 综合解读与问题回答
+             - 综合三张牌的能量，直接回答求问者的困惑。
+          三、 宇宙启示与建议
+             - 给出具体的行动指南。
 
-          Structure:
-          1. ANALYSIS OF INDIVIDUAL VESSELS (Past, Present, Future)
-             - For each card, explicitly mention if it is Upright (正位) or Reversed (逆位) and explain the specific meaning in this context.
-          2. SYNTHESIS OF THE INQUIRY
-          3. COSMIC GUIDANCE
-
-          Tone: Mysterious, objective, sophisticated, NASA-report style but mystical.
-          IMPORTANT: Use plain text only. Avoid all Markdown symbols like *, #, or -. 
-          Use clear line breaks for structure.
-          Language: Chinese.
+          语气：神秘、客观、专业且富有同理心。
+          重要：仅使用纯文本。禁止使用任何 Markdown 符号（如 *、#、-、> 等）。
+          使用清晰的换行符来分隔段落。
+          语言：中文。
         `;
 
         const response = await ai.models.generateContent({
