@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Sparkles, Send, User, ChevronRight, ChevronLeft, RefreshCw, Moon, Star, Compass } from 'lucide-react';
 import { GoogleGenAI } from "@google/genai";
 import { TAROT_CARDS, TarotCard } from './constants';
+import { generateLocalInterpretation, generateLocalFortune } from './services/localOracle';
 
 // --- Types ---
 type Step = 'intro' | 'input' | 'selection' | 'loading' | 'interpretation' | 'fortune';
@@ -501,6 +502,7 @@ const MagicBallLoading = () => {
 const InterpretationView = ({ userData, selectedCards, onNext }: { userData: UserData, selectedCards: SelectedCard[], onNext: () => void, key?: string }) => {
   const [interpretation, setInterpretation] = useState<string>('');
   const [loading, setLoading] = useState(true);
+  const [isLocalMode, setIsLocalMode] = useState(false);
 
   const getSuitColor = (suit?: string) => {
     switch (suit) {
@@ -516,9 +518,18 @@ const InterpretationView = ({ userData, selectedCards, onNext }: { userData: Use
     const fetchInterpretation = async () => {
       try {
         const apiKey = process.env.GEMINI_API_KEY || '';
+        
+        // Fallback to local interpretation if API key is missing
         if (!apiKey) {
-          throw new Error('API Key is missing');
+          console.warn('GEMINI_API_KEY is missing, falling back to local oracle.');
+          setIsLocalMode(true);
+          setTimeout(() => {
+            setInterpretation(generateLocalInterpretation(userData, selectedCards));
+            setLoading(false);
+          }, 1500); // Simulate some "mysterious" processing time
+          return;
         }
+
         const ai = new GoogleGenAI({ apiKey });
         const prompt = `
           你是一位精通宇宙奥秘的高级占卜师。
@@ -563,9 +574,12 @@ const InterpretationView = ({ userData, selectedCards, onNext }: { userData: Use
         // Clean up any stray markdown symbols
         const cleanText = text.replace(/[*#\-_~`]/g, '');
         setInterpretation(cleanText);
+        setIsLocalMode(false);
       } catch (error) {
         console.error('Tarot Interpretation Error:', error);
-        setInterpretation('命运的丝线暂时交织错乱。请检查您的连接或稍后重试。 (Error: ' + (error instanceof Error ? error.message : 'Unknown') + ')');
+        // Fallback to local interpretation on API error
+        setIsLocalMode(true);
+        setInterpretation(generateLocalInterpretation(userData, selectedCards));
       } finally {
         setLoading(false);
       }
@@ -590,11 +604,12 @@ const InterpretationView = ({ userData, selectedCards, onNext }: { userData: Use
           </div>
           <div className="text-right">
             <div className="text-[8px] font-mono text-white/20 uppercase">时间戳: {new Date().toISOString()}</div>
-            <div className="text-[8px] font-mono text-white/20 uppercase">主体: {userData.name}</div>
+            <div className="text-[8px] font-mono text-white/20 uppercase">启示来源: {isLocalMode ? '本地星图 (Local Oracle)' : '深空智能 (Gemini AI)'}</div>
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
+
           {selectedCards.map((item, idx) => (
             <motion.div 
               key={item.card.id}
@@ -670,9 +685,13 @@ const FortuneQuote = () => {
     setLoading(true);
     try {
       const apiKey = process.env.GEMINI_API_KEY || '';
+      
       if (!apiKey) {
-        throw new Error('API Key is missing');
+        setQuote(generateLocalFortune());
+        setIsRevealed(true);
+        return;
       }
+
       const ai = new GoogleGenAI({ apiKey });
       const response = await ai.models.generateContent({
         model: "gemini-2.0-flash",
@@ -690,7 +709,7 @@ const FortuneQuote = () => {
       setIsRevealed(true);
     } catch (error) {
       console.error('Fortune Quote Error:', error);
-      setQuote('命运的丝线，始终握在你自己手中。');
+      setQuote(generateLocalFortune());
       setIsRevealed(true);
     } finally {
       setLoading(false);
