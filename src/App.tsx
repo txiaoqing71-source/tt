@@ -167,7 +167,7 @@ const InputForm = ({ onSubmit }: { onSubmit: (data: UserData) => void, key?: str
       <div className="w-full max-w-md bg-black/40 backdrop-blur-2xl border border-white/20 rounded-3xl p-10 shadow-[0_0_60px_rgba(139,92,246,0.15)]">
         <div className="flex flex-col items-center mb-10 text-center">
           <h2 className="text-2xl font-serif text-white tracking-[0.4em] mb-2">命运的交汇</h2>
-          <p className="text-[10px] text-purple-400 tracking-[0.6em] uppercase">Intersection of Fate</p>
+          <p className="text-[10px] text-purple-400 tracking-[0.6em] uppercase">命运之交汇</p>
           <div className="w-16 h-[1px] bg-gradient-to-r from-transparent via-purple-500/50 to-transparent mt-6" />
         </div>
         
@@ -306,7 +306,7 @@ const CardSelection = ({ onSelect }: { onSelect: (cards: SelectedCard[]) => void
       <div className="absolute inset-2 border border-purple-500/10 rounded-lg pointer-events-none" />
       
       <div className="absolute bottom-4 left-0 right-0 text-center text-[7px] font-mono text-purple-400/40 uppercase tracking-[0.6em]">
-        ARCANE REVELATION
+        奥秘启示
       </div>
     </div>
   );
@@ -543,6 +543,7 @@ const InterpretationView = ({ userData, selectedCards, onNext }: { userData: Use
           要求：
           1. 必须根据牌面的正逆位进行解读。逆位通常代表能量的阻塞、内在的转化或延迟。
           2. 解读必须紧扣求问者的问题，给出实质性的建议。
+          3. 所有的解释、牌型描述、建议等必须全部使用中文。
           
           结构：
           一、 牌阵解析（过去、现在、未来）
@@ -555,7 +556,7 @@ const InterpretationView = ({ userData, selectedCards, onNext }: { userData: Use
           语气：神秘、客观、专业且富有同理心。
           重要：仅使用纯文本。禁止使用任何 Markdown 符号（如 *、#、-、> 等）。
           使用清晰的换行符来分隔段落。
-          语言：中文。
+          语言：中文（简体）。
         `;
 
         const response = await ai.models.generateContent({
@@ -631,7 +632,7 @@ const InterpretationView = ({ userData, selectedCards, onNext }: { userData: Use
                 </div>
                 {item.isReversed && (
                   <div className="absolute bottom-2 right-2 text-[8px] font-mono bg-purple-900/80 px-1 text-purple-200 border border-purple-500/30">
-                    REVERSED
+                    逆位
                   </div>
                 )}
               </div>
@@ -639,7 +640,10 @@ const InterpretationView = ({ userData, selectedCards, onNext }: { userData: Use
                 <h3 className="text-[10px] font-mono text-white tracking-[0.3em] uppercase mb-1">{item.card.name}</h3>
                 <div className="flex items-center justify-center gap-2">
                   <span className={`text-[8px] font-mono uppercase tracking-widest ${getSuitColor(item.card.suit)}`}>
-                    {item.card.arcana === 'Major' ? 'Major Arcana' : item.card.suit}
+                    {item.card.arcana === 'Major' ? '大阿卡纳' : 
+                     item.card.suit === 'Wands' ? '权杖组' :
+                     item.card.suit === 'Cups' ? '圣杯组' :
+                     item.card.suit === 'Swords' ? '宝剑组' : '星币组'}
                   </span>
                   <span className="text-[8px] text-white/20">|</span>
                   <span className={`text-[8px] font-mono uppercase tracking-widest ${item.isReversed ? 'text-purple-400' : 'text-blue-300'}`}>
@@ -695,7 +699,7 @@ const FortuneQuote = () => {
       const ai = new GoogleGenAI({ apiKey });
       const response = await ai.models.generateContent({
         model: "gemini-2.0-flash",
-        contents: [{ parts: [{ text: "Generate a single, powerful, and mysterious tarot-style fortune quote (one sentence). Language: Chinese. No markdown." }] }],
+        contents: [{ parts: [{ text: "请生成一句充满神秘感、富有哲理的塔罗风格占卜寄语（仅限一句话）。必须使用中文。不要使用 Markdown 格式。" }] }],
       });
       
       let text = '';

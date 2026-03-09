@@ -16,12 +16,12 @@ export const generateLocalInterpretation = (userData: UserData, selectedCards: S
 
   const getCardText = (item: SelectedCard, position: string) => {
     const { card, isReversed } = item;
-    let text = `【${position}：${card.name} (${isReversed ? '逆位' : '正位'})】\n`;
+    let text = `【${position}：${card.nameCN} (${isReversed ? '逆位' : '正位'})】\n`;
     
     if (isReversed) {
-      text += `能量处于内省或阻塞状态。${card.meaning}的正面力量目前难以完全发挥，可能暗示着内在的转化、延迟或需要重新审视的方向。`;
+      text += `能量处于内省或阻塞状态。${card.meaningCN}的正面力量目前难以完全发挥，可能暗示着内在的转化、延迟或需要重新审视的方向。`;
     } else {
-      text += `能量正位运行，预示着${card.meaning}的力量正在积极显现。这是一个明确的信号，指引你顺应当下的趋势。`;
+      text += `能量正位运行，预示着${card.meaningCN}的力量正在积极显现。这是一个明确的信号，指引你顺应当下的趋势。`;
     }
     return text;
   };
@@ -34,7 +34,7 @@ export const generateLocalInterpretation = (userData: UserData, selectedCards: S
     getCardText(future, '未来') + '\n\n';
 
   const synthesis = `二、 综合解读\n\n` +
-    `从整体牌阵来看，你的旅程正经历从“${past.card.name}”的根源，经过“${present.card.name}”的现状，向“${future.card.name}”的可能演变。` +
+    `从整体牌阵来看，你的旅程正经历从“${past.card.nameCN}”的根源，经过“${present.card.nameCN}”的现状，向“${future.card.nameCN}”的可能演变。` +
     `这表明你的问题“${userData.question}”正处于一个关键的转折点。建议你关注内在的直觉，平衡感性与理性的力量。\n\n`;
 
   const advice = `三、 宇宙建议\n\n` +
