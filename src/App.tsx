@@ -5,7 +5,7 @@
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Sparkles, Send, User, ChevronRight, ChevronLeft, RefreshCw, Moon, Star, Compass } from 'lucide-react';
+import { Sparkles, Send, User, ChevronRight, ChevronLeft, RefreshCw, Moon, Star, Compass, Download } from 'lucide-react';
 import { GoogleGenAI } from "@google/genai";
 import { TAROT_CARDS, TarotCard } from './constants';
 import { generateLocalInterpretation, generateLocalFortune } from './services/localOracle';
@@ -572,8 +572,8 @@ const InterpretationView = ({ userData, selectedCards, onNext }: { userData: Use
           text = '宇宙的信号有些微弱，请稍后再试。';
         }
 
-        // Clean up any stray markdown symbols
-        const cleanText = text.replace(/[*#\-_~`]/g, '');
+        // Clean up any stray markdown symbols and 'tt' if it appears as a weird artifact
+        const cleanText = text.replace(/[*#\-_~`]/g, '').replace(/\btt\b/g, '');
         setInterpretation(cleanText);
         setIsLocalMode(false);
       } catch (error) {
@@ -589,6 +589,137 @@ const InterpretationView = ({ userData, selectedCards, onNext }: { userData: Use
     fetchInterpretation();
   }, []);
 
+  const downloadAsHTML = () => {
+    const htmlContent = `
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>塔罗占卜报告 - ${userData.name}</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;500&display=swap');
+        body {
+            background-color: #0f0a1f;
+            color: rgba(255, 255, 255, 0.8);
+            font-family: 'Noto Serif SC', serif;
+            line-height: 1.8;
+            margin: 0;
+            padding: 40px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .container {
+            max-width: 800px;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 0 40px rgba(139, 92, 246, 0.1);
+        }
+        h1 {
+            color: #fff;
+            text-align: center;
+            letter-spacing: 0.3em;
+            margin-bottom: 40px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 20px;
+        }
+        .meta {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.4);
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        .card-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+        .card-img {
+            width: 100px;
+            height: 160px;
+            object-fit: cover;
+            border-radius: 4px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            margin-bottom: 10px;
+        }
+        .card-name {
+            font-size: 14px;
+            color: #fff;
+            margin-bottom: 5px;
+        }
+        .card-pos {
+            font-size: 10px;
+            color: #a855f7;
+            text-transform: uppercase;
+        }
+        .interpretation {
+            white-space: pre-wrap;
+            font-size: 15px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding-top: 30px;
+        }
+        .footer {
+            margin-top: 40px;
+            text-align: center;
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.2);
+            letter-spacing: 0.2em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>塔罗占卜报告</h1>
+        <div class="meta">
+            <div>求问者: ${userData.name}</div>
+            <div>时间: ${new Date().toLocaleString('zh-CN')}</div>
+        </div>
+        <div style="margin-bottom: 20px; font-style: italic; color: #c084fc;">
+            问题: ${userData.question}
+        </div>
+        <div class="cards">
+            ${selectedCards.map(item => `
+                <div class="card-item">
+                    <img src="${item.card.image}" class="card-img" style="transform: ${item.isReversed ? 'rotate(180deg)' : 'none'}">
+                    <div class="card-name">${item.card.name}</div>
+                    <div class="card-pos">${item.isReversed ? '逆位' : '正位'}</div>
+                </div>
+            `).join('')}
+        </div>
+        <div class="interpretation">
+${interpretation}
+        </div>
+        <div class="footer">
+            小汤的神奇塔罗屋 • 宇宙启示录
+        </div>
+    </div>
+</body>
+</html>
+    `;
+
+    const blob = new Blob([htmlContent], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `塔罗占卜报告_${userData.name}_${new Date().getTime()}.html`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   if (loading) return <MagicBallLoading />;
 
   return (
@@ -603,9 +734,14 @@ const InterpretationView = ({ userData, selectedCards, onNext }: { userData: Use
             <h2 className="text-[10px] font-mono text-white/40 uppercase tracking-[0.4em] mb-2">分析报告</h2>
             <h1 className="text-lg font-serif text-white tracking-[0.2em] uppercase">宇宙综合分析</h1>
           </div>
-          <div className="text-right">
+          <div className="text-right flex flex-col items-end gap-2">
             <div className="text-[8px] font-mono text-white/20 uppercase">时间戳: {new Date().toISOString()}</div>
-            <div className="text-[8px] font-mono text-white/20 uppercase">启示来源: {isLocalMode ? '本地星图 (Local Oracle)' : '深空智能 (Gemini AI)'}</div>
+            <button 
+              onClick={downloadAsHTML}
+              className="flex items-center gap-1 text-[8px] font-mono text-purple-400 hover:text-purple-300 transition-colors uppercase border border-purple-500/20 px-2 py-1 rounded"
+            >
+              <Download className="w-2 h-2" /> 下载报告
+            </button>
           </div>
         </div>
 
